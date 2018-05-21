@@ -3,17 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <title>Canvas Playground</title>
-    <script>
-        window.onload = function() {
-            const canvas = document.getElementById('canvas-app')
-            const ctx = canvas.getContext('2d')
-            canvas.addEventListener('click', console.log);
-        }
-    </script>
 </head>
 <body>
-    <canvas id="canvas-app" width="600" height="400" style="background-color: azure">
+    <canvas id="canvas-app" width="1000" height="800" style="background-color: azure"></canvas>
+    <div id="coordinates"></div>
+    <script src="scripts/index.js" defer></script>
 
-    </canvas>
 </body>
 </html>

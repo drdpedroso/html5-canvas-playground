@@ -5,5 +5,12 @@
     "import/extensions": ["always"],
     "import/prefer-default-export": [1, "always"],
     "max-len": ["error", { "code": 135 }]
+  },
+  "globals": {
+    "window": true,
+    "document": true,
+    "describe": true,
+    "it": true,
+    "expect": true
   }
 }
