@@ -15,7 +15,8 @@
 // const shouldPlacePoint = (points = []) => points.length <= 3
 //
 // // Receives the items to be reduced and the map function to be used
-// const reverseSubtractArray = (items = [], mapFunc = () => {}) => items.map(item => mapFunc(item)).reduce((acc, value) => value - acc)
+// const reverseSubtractArray = (items = [], mapFunc = () => {}) =>
+// items.map(item => mapFunc(item)).reduce((acc, value) => value - acc)
 //
 // const getFourthPoint = (points) => {
 //   // Given 3 points, you can have 3 different paralelograms. I choosed one of them.
@@ -100,27 +101,47 @@ const state = {
   points: [],
   canvas: null,
   context: '2d',
+  circleArea: null,
+  parallelogramArea: null,
 }
 
 const setState = newState => Object.assign(state, newState)
 
 const shouldPlacePoint = (points = []) => points.length < 3
 
-const isLastPoint = (points = []) => points.length === 3
 
-const reverSubtractArray = (items, mapFunc) => items.map(item => mapFunc(item)).reduce((acc, value) => value - acc)
+const revertSubtractItems = (items, mapFunc) => items
+  .map(item => mapFunc(item))
+  .reduce((acc, value) => value - acc)
+
+const sumItems = (items, mapFunc) => items.map(item => mapFunc(item)).reduce((acc, value) => value + acc)
 
 const getFourthPoint = (points) => {
   // Given 3 points, you can have 3 different paralelograms. I choosed one of them.
   // The formula for this calculus its x4 = x1 - (x2 - x3) to get the x
   // y4 = y3 - (y2 - y1) to get the y
-  const x = reverSubtractArray(points, point => point.x)
-  const y = reverSubtractArray(points, point => point.y)
-  return ({x, y})
+  const x = revertSubtractItems(points, point => point.x)
+  const y = revertSubtractItems(points, point => point.y)
+  return ({ x, y })
 }
 
+const calcArea = (points) => {
+  // Vetorial product
+  // (x1 * y2 - y1 * x2) + (x2 * y3 - y2 * x3) + (x3 * y4 - y3 * x4) + (x4 * y1 - y4 * x1)
+  const vProd = points.reduce((sum, point, i, arr) => {
+    const { x, y } = arr[(i + 1) % arr.length]
+    const res = (point.x * y) - (point.y * x)
+    return sum + res
+  }, 0)
+  return (vProd / 2)
+}
 
-const handleEventClick = ({pageX, pageY}) => {
+// Calculate the radius of a circle based on his area
+// Divide the area by Pi and take the results square root will give you the diameter
+// Divide it by 2 and you get the radius
+const calcRadius = area => (Math.sqrt(area / Math.PI) / 2)
+
+const handleEventClick = ({ pageX, pageY }) => {
   const { canvas, context, points } = state
   const ctx = canvas.getContext(context)
 
@@ -128,68 +149,51 @@ const handleEventClick = ({pageX, pageY}) => {
     const fourthPoint = getFourthPoint(points)
     const newPoints = points.concat([fourthPoint])
     ctx.beginPath()
-    newPoints.forEach((point, index) => index === 0 ? ctx.moveTo(point.x, point.y) : ctx.lineTo(point.x, point.y))
+    newPoints.forEach((point, index) => (index === 0 ? ctx.moveTo(point.x, point.y) : ctx.lineTo(point.x, point.y)))
     ctx.closePath()
     ctx.strokeStyle = color
     ctx.stroke()
     return [fourthPoint]
   }
 
-  const placePoint = (x, y, ctx, color, radius = 11) => {
+  const placePoint = (x, y, fillColor, radius = 11, strokeColor) => {
     ctx.beginPath()
     ctx.arc(x, y, radius, 0, 2 * Math.PI)
+    if (fillColor) {
+      ctx.fillStyle = fillColor
+      ctx.fill()
+    } else if (strokeColor) {
+
+    }
     ctx.stroke()
-    ctx.fillStyle = color
-    ctx.fill()
+
     return [{ x, y }]
   }
 
-  function calcArea(points) {
-    //(x1 * y2 - y1 * x2) + (x2 * y3 - y2 * x3) + (x3 * y4 - y3 * x4)... (x4 * y1 - y4 * x1)
-    return (
-        ((points[0].x * points[1].y - points[0].y * points[1].x) +
-        (points[1].x * points[2].y - points[1].y * points[2].x) +
-        (points[2].x * points[3].y - points[2].y * points[3].x) +
-        (points[3].x * points[0].y - points[3].y * points[0].x)) / 2)
-    // return ((AC * BD)/2).toFixed()
-  }
-
-  const point = shouldPlacePoint(points) ? placePoint(pageX, pageY, ctx, 'red') : mountParallelogram('blue')
+  const point = shouldPlacePoint(points) ? placePoint(pageX, pageY, 'red') : mountParallelogram('blue')
   const newPoints = points.concat(point)
-  const base = newPoints.length > 3 ?
-      Math.max(Math.sqrt(Math.pow((newPoints[3].x - newPoints[0].x), 2) + Math.pow((newPoints[3].y - [newPoints[0].y]), 2)), Math.sqrt(Math.pow((newPoints[1].x - newPoints[0].x), 2) + Math.pow((newPoints[1].y - [newPoints[0].y]), 2)))
-      : 0
-  if(!!base) {
-    const centerX = (newPoints[0].x + newPoints[1].x + newPoints[2].x + newPoints[3].x) / 4;
-    const centerY = (newPoints[0].y + newPoints[1].y + newPoints[2].y + newPoints[3].y) / 4;
-    // console.log(calcArea(newPoints))
+  if (newPoints.length > 3) {
+    const centerX = sumItems(newPoints, p => p.x) / 4
+    const centerY = sumItems(newPoints, p => p.y) / 4
     const area = calcArea(newPoints)
-    console.log(area)
-    const height = area / base
-    const radius = (height / 2).toFixed()
-    placePoint(centerX, centerY,ctx, 'red', radius)
+    const radius = calcRadius(area)
+    placePoint(centerX, centerY, null, radius)
   }
-  // console.log(base, bla)
 
   setState({ points: newPoints })
 }
 
 const resetBoard = () => {
-  const {canvas, context} = state
+  const { canvas, context } = state
   const ctx = canvas.getContext(context)
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  setState({points: []})
+  ctx.clearRect(0, 0, canvas.width, canvas.height)
+  setState({ points: [] })
   canvas.addEventListener('click', handleEventClick)
-};
+}
 
-const init = () => {
+window.onload = function onLoad() {
   const canvas = document.getElementById('canvas-app')
   canvas.addEventListener('click', handleEventClick)
 
   setState({ canvas })
-}
-
-window.onload = function onLoad() {
-  init()
-
 }
