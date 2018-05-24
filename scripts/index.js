@@ -106,6 +106,8 @@ const setState = newState => Object.assign(state, newState)
 
 const shouldPlacePoint = (points = []) => points.length < 3
 
+const isLastPoint = (points = []) => points.length === 3
+
 const reverSubtractArray = (items, mapFunc) => items.map(item => mapFunc(item)).reduce((acc, value) => value - acc)
 
 const getFourthPoint = (points) => {
@@ -119,33 +121,55 @@ const getFourthPoint = (points) => {
 
 
 const handleEventClick = ({pageX, pageY}) => {
-  // const { pageX, pageY } = e
   const { canvas, context, points } = state
   const ctx = canvas.getContext(context)
 
-  const mountParallelogram = () => {
-    const { points } = state
+  const mountParallelogram = (color) => {
     const fourthPoint = getFourthPoint(points)
     const newPoints = points.concat([fourthPoint])
     ctx.beginPath()
     newPoints.forEach((point, index) => index === 0 ? ctx.moveTo(point.x, point.y) : ctx.lineTo(point.x, point.y))
     ctx.closePath()
+    ctx.strokeStyle = color
     ctx.stroke()
     return [fourthPoint]
   }
 
-  const placePoint = (x, y, ctx, color) => {
+  const placePoint = (x, y, ctx, color, radius = 11) => {
     ctx.beginPath()
-    ctx.arc(x, y, 11, 0, 2 * Math.PI)
+    ctx.arc(x, y, radius, 0, 2 * Math.PI)
     ctx.stroke()
     ctx.fillStyle = color
     ctx.fill()
-
     return [{ x, y }]
   }
 
-  const point = shouldPlacePoint(points) ? placePoint(pageX, pageY, ctx, 'red') : mountParallelogram(ctx)
+  function calcArea(points) {
+    //(x1 * y2 - y1 * x2) + (x2 * y3 - y2 * x3) + (x3 * y4 - y3 * x4)... (x4 * y1 - y4 * x1)
+    return (
+        ((points[0].x * points[1].y - points[0].y * points[1].x) +
+        (points[1].x * points[2].y - points[1].y * points[2].x) +
+        (points[2].x * points[3].y - points[2].y * points[3].x) +
+        (points[3].x * points[0].y - points[3].y * points[0].x)) / 2)
+    // return ((AC * BD)/2).toFixed()
+  }
+
+  const point = shouldPlacePoint(points) ? placePoint(pageX, pageY, ctx, 'red') : mountParallelogram('blue')
   const newPoints = points.concat(point)
+  const base = newPoints.length > 3 ?
+      Math.max(Math.sqrt(Math.pow((newPoints[3].x - newPoints[0].x), 2) + Math.pow((newPoints[3].y - [newPoints[0].y]), 2)), Math.sqrt(Math.pow((newPoints[1].x - newPoints[0].x), 2) + Math.pow((newPoints[1].y - [newPoints[0].y]), 2)))
+      : 0
+  if(!!base) {
+    const centerX = (newPoints[0].x + newPoints[1].x + newPoints[2].x + newPoints[3].x) / 4;
+    const centerY = (newPoints[0].y + newPoints[1].y + newPoints[2].y + newPoints[3].y) / 4;
+    // console.log(calcArea(newPoints))
+    const area = calcArea(newPoints)
+    console.log(area)
+    const height = area / base
+    const radius = (height / 2).toFixed()
+    placePoint(centerX, centerY,ctx, 'red', radius)
+  }
+  // console.log(base, bla)
 
   setState({ points: newPoints })
 }
