@@ -107,7 +107,7 @@ const state = {
 
 const setState = newState => Object.assign(state, newState)
 
-const shouldPlacePoint = (points = []) => points.length < 3
+export const shouldPlacePoint = (points = []) => points.length < 3
 
 
 const revertSubtractItems = (items, mapFunc) => items
