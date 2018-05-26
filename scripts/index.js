@@ -103,12 +103,18 @@ const state = {
   context: '2d',
   circleArea: null,
   parallelogramArea: null,
+  canvasOffsetLeft: null,
+  canvasOffsetTop: null,
+  isDragging: false
 }
 
-const setState = newState => Object.assign(state, newState)
+// Receives the new state to be set and the callback
+const setState = (newState, callback = () => {}) => {
+  const returnableState = Object.assign(state, newState)
+  return callback(returnableState)
+}
 
-export const shouldPlacePoint = (points = []) => points.length < 3
-
+const shouldPlacePoint = (points = []) => points.length < 3
 
 const revertSubtractItems = (items, mapFunc) => items
   .map(item => mapFunc(item))
@@ -141,22 +147,26 @@ const calcArea = (points) => {
 // Divide it by 2 and you get the radius
 const calcRadius = area => (Math.sqrt(area / Math.PI) / 2)
 
+const getClickedPoints = ({pageX, pageY}, points, radius = 11) => {
+  return points.filter(({x, y}) => (x <= pageX) && (x + radius * 2 >= pageX) && (y <= pageY) && (y + 11 * 2 >= pageY))
+}
+
+// Care: Inpure functions below
 const handleEventClick = ({ pageX, pageY }) => {
   const { canvas, context, points } = state
+  const [x, y] = [(pageX - canvas.offsetLeft), (pageY - canvas.offsetTop)]
   const ctx = canvas.getContext(context)
 
-  const mountParallelogram = (color) => {
-    const fourthPoint = getFourthPoint(points)
-    const newPoints = points.concat([fourthPoint])
+  const mountParallelogram = (color, points) => {
     ctx.beginPath()
-    newPoints.forEach((point, index) => (index === 0 ? ctx.moveTo(point.x, point.y) : ctx.lineTo(point.x, point.y)))
+    points.forEach((point, index) => (index === 0 ? ctx.moveTo(point.x, point.y) : ctx.lineTo(point.x, point.y)))
     ctx.closePath()
     ctx.strokeStyle = color
     ctx.stroke()
-    return [fourthPoint]
+    return points
   }
 
-  const placePoint = (x, y, fillColor, radius = 11, strokeColor) => {
+  const placePoint = (x, y, fillColor, radius = 11, strokeColor, clicable = true) => {
     ctx.beginPath()
     ctx.arc(x, y, radius, 0, 2 * Math.PI)
     if (fillColor) {
@@ -166,21 +176,56 @@ const handleEventClick = ({ pageX, pageY }) => {
 
     }
     ctx.stroke()
-
     return [{ x, y }]
   }
 
-  const point = shouldPlacePoint(points) ? placePoint(pageX, pageY, 'red') : mountParallelogram('blue')
-  const newPoints = points.concat(point)
-  if (newPoints.length > 3) {
-    const centerX = sumItems(newPoints, p => p.x) / 4
-    const centerY = sumItems(newPoints, p => p.y) / 4
-    const area = calcArea(newPoints)
-    const radius = calcRadius(area)
-    placePoint(centerX, centerY, null, radius)
-  }
+  draw(points, x, y, placePoint, mountParallelogram)
+}
 
-  setState({ points: newPoints })
+const draw = (points, x, y, placePoint, mountParallelogram) => {
+  if (points.length < 4) {
+    const point = shouldPlacePoint(points) ? placePoint(x, y, 'red') : getFourthPoint(points)
+    const newPoints = points.concat(point)
+    if (newPoints.length > 3) {
+      mountParallelogram('blue', newPoints)
+      const centerX = sumItems(newPoints, p => p.x) / 4
+      const centerY = sumItems(newPoints, p => p.y) / 4
+      const area = calcArea(newPoints)
+      const radius = calcRadius(area)
+      placePoint(centerX, centerY, null, radius)
+    }
+    setState({ points: newPoints })
+  }
+}
+
+// const updateShapes = () => {
+//
+// }
+
+const handleEventMouseDown = (e) => {
+  e.preventDefault()
+  e.stopPropagation()
+  const { points } = state
+  const clickedPoints = points.length > 3 ?
+    getClickedPoints(e, points, 11)
+  : null
+  
+  setState({isDragging: points[selectedIndex]})
+}
+
+const mouseMove = function(e) {
+  const {isDragging, canvas, points} = state
+  const ctx = canvas.getContext(context)
+  if (isDragging) {
+
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    const [x, y] = [(pageX - canvas.offsetLeft), (pageY - canvas.offsetTop)]
+
+    // isDragging.x = mouse.x - dragOffX;ctx
+    // isDragging.y = mouse.y - dragOffY;
+
+    draw()
+  }
 }
 
 const resetBoard = () => {
@@ -194,6 +239,12 @@ const resetBoard = () => {
 window.onload = function onLoad() {
   const canvas = document.getElementById('canvas-app')
   canvas.addEventListener('click', handleEventClick)
+  canvas.addEventListener('mousedown', handleEventMouseDown, true)
+  canvas.addEventListener('mousemove', mouseMove, true)
+  canvas.addEventListener('mouseup', (e) => {
+    console.log(2)
+    // debugger
+  }, true)
 
   setState({ canvas })
 }
