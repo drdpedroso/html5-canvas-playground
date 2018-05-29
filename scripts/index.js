@@ -1,3 +1,4 @@
+// Single point of truth of the project
 const state = {
   points: [],
   canvas: null,
@@ -56,11 +57,9 @@ const calcRadius = area => (Math.sqrt(area / Math.PI) / 2)
 // Since a canvas is a simple bitmap representation (has no DOM element for a circle, for example), we need to find the
 // element by position. This calculates and returns an array of points
 const getClickedPoints = ({ pageX, pageY }, points, radius = 11) => points
-  .filter(({ x, y }) => {
-    return (y <= pageY) && (y + radius * 2 >= pageY) && (x <= x + radius) && (x + radius * 2 >= pageX)
-  })
+  .filter(({ x, y }) => (y <= pageY) && (y + radius * 2 >= pageY) && (x <= x + radius) && (x + radius * 2 >= pageX))
 
-
+// Simply convert the coordinates to text (showing the circle "index")
 const mountText = ({ x, y }, index) => `${index + 1}: ${x} - ${y}`
 
 // Care: Impure functions below
@@ -70,17 +69,17 @@ const showCoordinates = ({ points, area }) => {
   const element = document.getElementById('coordinates')
   element.innerHTML = ''
 
-  function createDOMNode (text) {
+  function createDOMNode(text) {
     const div = document.createElement('div')
     div.innerText = text
-    element.appendChild(div)
+    return div
   }
 
   points.forEach((point, index) => {
     const text = mountText(point, index)
-    createDOMNode(text)
+    element.appendChild(createDOMNode(text))
   })
-  area ? createDOMNode(JSON.stringify(area)) : null
+  area ? element.appendChild(createDOMNode(`Shapes Area: ${area.toFixed(1)}`)) : null
 }
 
 // Function responsible for dawning anything on the screen
@@ -121,7 +120,7 @@ const draw = (points, x, y, ctx) => {
       const centerY = sumItems(newPoints, p => p.y) / 4
       const area = calcArea(newPoints)
       const radius = calcRadius(area)
-      placePoint(centerX, centerY, null, radius, 'yellow')
+      placePoint(centerX, centerY, null, radius, '#e8cf33')
       setState({ area, radius }, showCoordinates)
     }
 

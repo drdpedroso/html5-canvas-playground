@@ -3,15 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <title>Canvas Playground</title>
+    <link rel="stylesheet" href="./style/index.css">
 </head>
 <body>
     <script src="scripts/index.js" defer></script>
 
-    <canvas id="canvas-app" width="1000" height="1000" style="background-color: azure"></canvas>
-    <button onclick="resetBoard()">Reset</button>
-    <div id="coordinates"></div>
-
-    <div id="areas"></div>
+    <canvas id="canvas-app" width="1100" height="800" style="background-color: azure"></canvas>
+    <div>
+        <button class="Navigation-button Navigation-button--danger" onclick="resetBoard()">Reset</button>
+        <button class="Navigation-button Navigation-button--success"
+                onclick="window.location.href = 'https://github.com/drdpedroso/html5-canvas-playground/blob/master/README.md'">About</button>
+    </div>
+    <div id="coordinates" class="Coordinates-list"></div>
 
 </body>
 </html>
