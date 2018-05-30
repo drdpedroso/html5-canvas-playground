@@ -17,7 +17,7 @@ to experiment something with that paradigm.
 
 #### Architecture
 The code is divided into two parts, one made of fully [pure functions](https://medium.com/@jamesjefferyuk/javascript-what-are-pure-functions-4d4d5392d49c) and the other with impure functions. 
-That's means (in this particular case) that the first part it's not going to deal with any kind of interaction with the canvas or de DOM, for example, it will
+That's means (in this particular case) that the first part it's not going to deal with any kind of interaction with the canvas or the DOM, for example, it will
 only work receiving data and return a new one. Same input = Same output. The second half its totally related to printing,
 painting and creating elements on the DOM (that's the impure part of it).
 
